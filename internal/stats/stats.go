@@ -2,14 +2,15 @@ package stats
 
 import (
 	"math"
+	"time"
 
 	"github.com/wolfmagnate/performance-log-analyzer/internal/event"
 )
 
 type EventStats struct {
-	TotalTime  int64
+	TotalTime  time.Duration
 	Count      int
-	SquaredSum int64
+	SquaredSum time.Duration
 }
 
 func CalculateStats(events []*event.Event) map[string]*EventStats {
@@ -26,28 +27,23 @@ func calculateEventStats(e *event.Event, statsMap map[string]*EventStats) {
 		stats = &EventStats{}
 		statsMap[e.Name] = stats
 	}
-
 	stats.TotalTime += e.Duration
 	stats.Count++
 	stats.SquaredSum += e.Duration * e.Duration
-
-	for _, child := range e.Children {
-		calculateEventStats(child, statsMap)
-	}
 }
 
-func CalculateMean(stats *EventStats) float64 {
+func CalculateMean(stats *EventStats) time.Duration {
 	if stats.Count == 0 {
 		return 0
 	}
-	return float64(stats.TotalTime) / float64(stats.Count)
+	return time.Duration(int64(stats.TotalTime) / int64(stats.Count))
 }
 
-func CalculateStdDev(stats *EventStats) float64 {
+func CalculateStdDev(stats *EventStats) time.Duration {
 	if stats.Count == 0 {
 		return 0
 	}
 	mean := CalculateMean(stats)
-	variance := float64(stats.SquaredSum)/float64(stats.Count) - mean*mean
-	return math.Sqrt(variance)
+	variance := float64(stats.SquaredSum)/float64(stats.Count) - math.Pow(float64(mean), 2)
+	return time.Duration(math.Sqrt(float64(variance)))
 }
